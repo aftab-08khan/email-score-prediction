@@ -1,21 +1,31 @@
-from flask import Flask, request, jsonify
+import streamlit as st
 import joblib
 
-app = Flask(__name__)
-
-model = joblib.load("model/email_score_model.pkl")
+# Load model and vectorizer
+model = joblib.load("model/email_category_model.pkl")
 vectorizer = joblib.load("model/tfidf_vectorizer.pkl")
 
-@app.route("/predict-score", methods=["POST"])
-def predict_score():
-    data = request.json
-    email_description = data["email_description"]
-    
-    X = vectorizer.transform([email_description])
-    
-    score = model.predict(X)[0]
-    
-    return jsonify({"score": score})
+def predict_category(email_text):
+    X = vectorizer.transform([email_text])
+    prediction = model.predict(X)
+    return prediction[0]
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+# Set page configuration
+st.set_page_config(page_title="Email Description Category Predictor", page_icon="📧", layout="centered")
+
+# Title for the app
+st.title("Email Description Category Predictor")
+
+# Input area for email description
+email_description = st.text_area("Enter Email Description:", height=200)
+
+# Button to trigger the prediction
+if st.button("Check Category"):
+    if email_description:
+        category = predict_category(email_description)
+        if category == 1:
+            st.success("📌 Predicted Category: **Valid**")
+        else:
+            st.error("📌 Predicted Category: **Not Valid**")
+    else:
+        st.warning("Please enter an email description to check.")
